@@ -1,5 +1,5 @@
 # Markdown Document Object Model (MDOM)
-## Technical Specification — v0.5.0
+## Technical Specification — v0.6.0
 
 ---
 
@@ -404,16 +404,17 @@ Positional indices are **1-based** throughout — `##:1` selects the first H2, `
 | Syntax | Description |
 | :--- | :--- |
 | `##` | All H2 Sections (any header text). |
-| `## [Installation]` | The H2 Section whose `headerText` equals `"Installation"` (case-sensitive). The space between `##` and `[` is optional. |
+| `## [Installation]` | The H2 Section whose `headerText` equals `"Installation"` (case-insensitive exact match). The space between `##` and `[` is optional. |
+| `## Installation` | Short-form Section selector for single-token headers only (`[A-Za-z0-9_-]+`). Equivalent to `## [Installation]`. |
 | `##:2` | The **second** H2 in the document (1-based). |
 | `## [Notes]:2` | The second H2 whose `headerText` equals `"Notes"` (1-based). |
 
 **Matching rules for `[text]`:**
 
 - Matching is against the node's `headerText` (plain-text rendering of the header Inlines).
-- Matching is exact and case-sensitive by default.
-- Whitespace inside `[...]` is significant: `[My API]` will not match `[my api]`.
-- Future versions may support `[/regex/i]` for case-insensitive pattern matching.
+- Matching is exact and case-insensitive.
+- Whitespace and punctuation are significant.
+- Short-form `## token` supports only a single token header name with letters, numbers, `_`, or `-`.
 
 ### 5.2 Block Selectors
 
@@ -422,7 +423,10 @@ Positional indices are **1-based** throughout — `##:1` selects the first H2, `
 | `p` | All Paragraph blocks. |
 | `code` | All CodeBlock blocks. |
 | `list` | All List blocks. |
+| `ul` | Alias for `list` (unordered list compatibility). |
+| `ol` | Alias for `list` (ordered list compatibility). |
 | `list-item` | All ListItem blocks (excludes TaskItems). |
+| `li` | Alias for `list-item` plus `task-item` (compatibility alias for list item targeting). |
 | `task-item` | All TaskItem blocks. |
 | `blockquote` | All BlockQuote blocks. |
 | `table` | All Table blocks. |
@@ -436,12 +440,15 @@ Attribute filters are appended to any selector using `[attr="value"]` syntax.
 | Syntax | Description |
 | :--- | :--- |
 | `code[lang="js"]` | CodeBlocks whose `lang` property equals `"js"`. |
+| `code[language="js"]` | Alias for `code[lang="js"]`. |
 | `code[lang]` | CodeBlocks that have any non-null `lang`. |
 | `task-item[status="x"]` | TaskItems with status `"x"`. |
 | `task-item[status=""]` | TaskItems that are unchecked (open). |
 | `heading[level="2"]` | HeadingBlock nodes at level 2. |
 
 Multiple filters may be chained: `code[lang="ts"][lang!="tsx"]`. Supported operators: `=` (equals), `!=` (not equals), `^=` (starts with), `$=` (ends with), `*=` (contains).
+
+Attribute comparisons are case-insensitive for string values. Both single quotes and double quotes are valid in attribute filters.
 
 ### 5.4 Combinators
 
@@ -461,6 +468,10 @@ Multiple filters may be chained: `code[lang="ts"][lang!="tsx"]`. Supported opera
 4. `ColonIndex` immediately following a `HashSequence`, `BracketText`, or `ElementType` is a 1-based positional filter.
 5. Combinators are inferred from context: `>` is explicit; a single space between two non-combinator tokens implies descendant; `+` is explicit.
 6. An unrecognized token raises a `SelectorSyntaxError`.
+
+### 5.6 Unsupported Selector Features
+
+The selector language is intentionally small. CSS pseudo-selectors are not supported. In particular, `:has(...)`, `:nth-child(...)`, and `:nth-of-type(...)` are invalid and must raise `SelectorSyntaxError`.
 
 ---
 
@@ -845,7 +856,19 @@ Tool names use the `markdown_` prefix to be immediately recognizable to any LLM 
 | `markdown_find` | Find — locate a node by natural language | When exact heading text is unknown |
 | `markdown_edit` | Edit — apply one or more mutations atomically | The primary write tool |
 
-Task management tools (`markdown_get_tasks`, `markdown_set_tasks`) are specified separately — see §10.6.
+Task management is provided by `markdown_tasks` — see §10.6.
+
+### 10.1.1 Canonical Tool Descriptions
+
+These are the authoritative natural-language descriptions for agent-facing tools. Implementations should keep runtime tool descriptions aligned with this section.
+
+- `markdown_outline`: Get a table of contents for a Markdown document. Call this first on unfamiliar documents to map section structure with minimal tokens. Use `format: "text"` for quick orientation; use `format: "json"` when you need pre-computed selectors for follow-up tool calls.
+- `markdown_read`: Read a specific section or block, or the full document. If a Section selector is used, return the section header plus all owned descendants (including nested subsections). Supports selector compatibility aliases (`ul`/`ol`/`list`, `li`/`list-item`/`task-item`, `code[lang=...]` / `code[language=...]`).
+- `markdown_find`: Locate a section or block from natural language when exact heading text is unknown. Returns ranked candidates with selectors and confidence scores. Returned selectors are MDOM selectors (not CSS selectors).
+- `markdown_edit`: Apply one or more document edits atomically in a single call. Supported operations are `replace`, `insert`, `remove`, `move`, and `substitute`. Prefer semantic selectors over positional selectors in multi-op batches to reduce selector drift.
+- `markdown_tasks`: Query and mutate checkbox task items (`query`, `update`, `toggle`, `add`, `remove`). Use this for task state changes instead of `markdown_edit`.
+
+**Selector compatibility note:** MDOM intentionally does not support CSS pseudo-selectors such as `:has(...)`, `:nth-child(...)`, or `:nth-of-type(...)`. Use MDOM-native positional syntax (`:N`) and attribute filters instead.
 
 ---
 
@@ -918,7 +941,7 @@ Because `markdown_read` can return the full document, it also serves as the expo
 | Parameter | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
 | `markdown` | string | yes | The source Markdown document. |
-| `selector` | string | no | MDOM selector identifying the target node. Omit or pass `"*"` to read the full document. |
+| `selector` | string | no | MDOM selector identifying the target node. Omit or pass `"*"` to read the full document. For Sections, returns the header plus all owned descendants. Supports compatibility aliases (`ul`, `ol`, `li`) and `code[lang="..."]` / `code[language="..."]`. |
 | `all` | boolean | no | If true, returns all matching nodes. Default: false (first match only). |
 | `format` | string | no | `"markdown"` (default) or `"json"` (returns node metadata alongside content). |
 | `maxTokens` | integer | no | Approximate token budget. Content is truncated with a truncation notice if exceeded. |
@@ -1416,7 +1439,3 @@ Deletes matching task items and their content. Does not affect surrounding list 
    → appends two new open tasks
    → returns updated markdown + changed[] with new selectors
 ```
-
----
-
-*MDOM Specification v0.5.0 — End of Document*
