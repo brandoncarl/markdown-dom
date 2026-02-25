@@ -1,11 +1,12 @@
 # Markdown Document Object Model (MDOM)
-## Technical Specification — v0.6.0
+## Technical Specification — v0.1.0
 
----
+> [!IMPORTANT]
+> Given sufficient interest, we'd target a solid v1.0 specification by March 31, 2026.
 
 ## Table of Contents
 
-1. [Introduction](#1-introduction)
+1. [Purpose](#1-purpose)
 2. [Core Architecture](#2-core-architecture)
 3. [Data Structures](#3-data-structures)
 4. [TaskItem](#4-taskitem)
@@ -16,15 +17,34 @@
 9. [Examples](#9-examples)
 10. [Agent Tool Interface](#10-agent-tool-interface)
 
----
+## 1. Purpose
 
-## 1. Introduction
+**Markdown** has emerged as the "lingua franca" of LLMs. It is _structured enough_ to convey meaning, and yet _readable everywhere_.
+
+However, as document lengths increase (see Andrej Karpathy's [prescient tweet](https://x.com/karpathy/status/1899876370492383450?s=20)):
+1. It is wasteful to put the entire context in memory
+2. It can reduce accuracy by providing less relevant information
+3. Increase the possibility of errors during edits
+
+Inspired by Cloudflare's [Code Mode](https://blog.cloudflare.com/code-mode-mcp/), we propose a lightweight document object model for Markdown to:
+1. Reduce costs
+2. Increase the accuracy of locating key sections
+3. Increase speed
+4. Increase the accuracy of editing documents
+
+This specification is based on providing 4 key tools: [outline](#102-markdown_outline), [read](#103-markdown_read), [find](#104-markdown_find) and [edit](#105-markdown_edit). Properly defined people can use it to create libraries across languages.
+
+**Getting Involved**
+How can you help?
+1. Volunteer to be part of the governing body to lead and make decisions. Reach out to "members@markdowndom.com".
+2. Provide comments by submitting issues. Please don't flood these with AI.
+3. Run experiments to work through what works and what doesn't.
+
+### 1.1 Design Goals
 
 The **Markdown Document Object Model (MDOM)** is a library-level abstraction that parses Markdown source into a hierarchical, mutable tree. Unlike flat AST representations (e.g., CommonMark's node list), MDOM treats headers as *implicit structural containers* — a heading does not merely introduce content; it *owns* it.
 
 This design makes MDOM suitable for programmatic document manipulation: renaming sections, moving blocks, injecting content at precise locations, and re-serializing with guaranteed source fidelity.
-
-### 1.1 Design Goals
 
 - **Structural clarity** — Headers create Sections; Sections own their children.
 - **Source fidelity** — Style metadata and source ranges are preserved so that unmodified nodes serialize without loss.
@@ -56,8 +76,6 @@ MDOM makes several deliberate choices that diverge from Markdown standards or Ja
 MDOM accepts Setext-style headers (`===` and `---` underlines) at parse time but normalizes them to hash equivalents during parsing — `===` becomes `#`, `---` becomes `##` — and `doc.headingStyle` is set to `"setext"` to record that the source used this convention. On `render()`, if `headingStyle` remains `"setext"`, the output uses Setext notation; if changed to `"hash"`, hash notation is used. The lossless round-trip guarantee does not apply to Setext sources.
 
 The primary motivation for accepting rather than rejecting Setext is pragmatic: a significant body of real-world Markdown — older GitHub READMEs, Jekyll content, Pandoc output — uses Setext headers, and throwing a parse error would create unnecessary friction for consumers of existing documents.
-
----
 
 ## 2. Core Architecture
 
@@ -130,8 +148,6 @@ const doc = parse(src, { strict: false });
 ```
 
 A utility function `normalizeHeaders(src, targetFormat)` is also provided for pre-processing source strings before parsing.
-
----
 
 ## 3. Data Structures
 
@@ -391,7 +407,7 @@ doc.selectAll(`task-item[status="x"]`);  // all complete items
 
 A `List` Block may contain a mix of `ListItem` and `TaskItem` children. This is valid MDOM and reflects legal Markdown. The `blockType` of each child distinguishes them. A `List` that contains at least one `TaskItem` is considered a *task list*; this is a derived property and is not stored on the `List` node itself.
 
----
+
 
 ## 5. Selector Language
 
@@ -473,7 +489,7 @@ Attribute comparisons are case-insensitive for string values. Both single quotes
 
 The selector language is intentionally small. CSS pseudo-selectors are not supported. In particular, `:has(...)`, `:nth-child(...)`, and `:nth-of-type(...)` are invalid and must raise `SelectorSyntaxError`.
 
----
+
 
 ## 6. API Surface
 
@@ -564,7 +580,7 @@ interface TocEntry {
 
 Serializes the Document tree (or the subtree rooted at the current node) back to a Markdown string. See §8 for the lossless round-trip guarantee.
 
----
+
 
 ## 7. Edge Case Resolution
 
@@ -612,7 +628,7 @@ If `##:5` is requested but fewer than 5 H2 Sections exist, `select` returns `nul
 
 MDOM trees are not thread-safe. Callers must serialize mutations or clone the tree before concurrent use.
 
----
+
 
 ## 8. Serialization & Lossless Round-Trip
 
@@ -656,7 +672,7 @@ When a node is replaced or created via API: the new sub-tree inherits the origin
 | Source contains mixed hash and dot headers (strict mode) | ❌ `FormatMixError` thrown |
 | Source contains mixed hash and dot headers (lenient mode) | ⚠️ Auto-normalized; original format of minority headers not preserved |
 
----
+
 
 ## 9. Examples
 
@@ -837,7 +853,6 @@ function printToc(entries, depth = 0) {
 printToc(doc.toc());
 ```
 
----
 
 ## 10. Agent Tool Interface
 
@@ -870,7 +885,6 @@ These are the authoritative natural-language descriptions for agent-facing tools
 
 **Selector compatibility note:** MDOM intentionally does not support CSS pseudo-selectors such as `:has(...)`, `:nth-child(...)`, or `:nth-of-type(...)`. Use MDOM-native positional syntax (`:N`) and attribute filters instead.
 
----
 
 ### 10.2 `markdown_outline`
 
@@ -928,8 +942,6 @@ Structured JSON with pre-computed selectors per section, suitable for programmat
 
 **Usage note:** When using `json` format, selectors returned in the output are guaranteed to resolve correctly against the same document. Agents should prefer these pre-computed selectors over generating their own when the section title is known.
 
----
-
 ### 10.3 `markdown_read`
 
 Fetches the rendered Markdown of a node matched by selector — the header and all content it owns, including sub-sections. Returns only what was asked for, not the whole document. To read the entire document, omit the `selector` parameter or pass `"*"`.
@@ -980,8 +992,6 @@ When `all: true`, returns `{ "items": [ { ... }, ... ] }` in either format.
 ```
 
 Returns the entire document — useful as the final export step after a series of `markdown_edit` calls.
-
----
 
 ### 10.4 `markdown_find`
 
@@ -1049,8 +1059,6 @@ The raw pass preserves signal from intentional casing and punctuation. The norma
 ```
 
 **Usage note:** Always inspect the top candidate's `snippet` before writing to confirm it is the intended target. If the top score is below 0.75, call `markdown_outline` first to orient, then re-query with a more specific description.
-
----
 
 ### 10.5 `markdown_edit`
 
@@ -1198,8 +1206,6 @@ When ops in the same batch use positional selectors (e.g., `p:2`), be aware that
 - The `diff` in the response can be used to verify that all ops landed as intended.
 - `substitute` ops are immune to positional drift since they match by text content, not position.
 
----
-
 ### 10.6 `markdown_tasks`
 
 Manages task items across a Markdown document. All task operations — reading, updating, adding, removing — are handled by this single tool so that agents never need to leave it for task-related work. The `mode` parameter determines the operation.
@@ -1227,8 +1233,6 @@ Manages task items across a Markdown document. All task operations — reading, 
 ```
 
 The `changed` array provides compact per-item confirmation without requiring the agent to re-read the document. For `add`, the new item's selector is included with `"from": null`. For `remove`, `"to": null`.
-
----
 
 #### Mode: `query`
 
@@ -1273,8 +1277,6 @@ Returns all matching tasks as structured JSON. Use this to orient before updatin
 }
 ```
 
----
-
 #### Mode: `update`
 
 Updates one or more properties of matching task items. Currently supports `status`; designed to be extended with additional properties (e.g., due dates, assignees) in future versions without breaking existing calls.
@@ -1299,8 +1301,6 @@ Updates one or more properties of matching task items. Currently supports `statu
 }
 ```
 
----
-
 #### Mode: `toggle`
 
 Flips a task between open (`""`) and complete (`"x"`) without requiring a prior read. If the task is open, it becomes complete. If it is anything else, it becomes open. This eliminates a read-then-write round trip for the most common agentic pattern.
@@ -1321,8 +1321,6 @@ Flips a task between open (`""`) and complete (`"x"`) without requiring a prior 
   "filter": "[status=\"\"]"
 }
 ```
-
----
 
 #### Mode: `add`
 
@@ -1347,8 +1345,6 @@ Inserts one or more new task items into a list. New items are open (`""`) by def
 }
 ```
 
----
-
 #### Mode: `remove`
 
 Deletes matching task items and their content. Does not affect surrounding list items or section structure.
@@ -1370,8 +1366,6 @@ Deletes matching task items and their content. Does not affect surrounding list 
   "match": "all"
 }
 ```
-
----
 
 ### 10.7 Typical Agent Workflows
 
