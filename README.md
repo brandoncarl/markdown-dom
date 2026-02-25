@@ -22,7 +22,7 @@ This specification is based on providing 4 key tools: [outline](#102-markdown_ou
 
 **Getting Involved**
 How can you help?
-1. Volunteer to be part of the governing body to lead and make decisions. Reach out to "members@markdowndom.com".
+1. Volunteer to be part of the governing body to lead and make decisions. Reach out to members@markdowndom.com.
 2. Provide comments by submitting issues. Please don't flood these with AI.
 3. Run experiments to work through what works and what doesn't.
 
@@ -33,7 +33,7 @@ How can you help?
 3. [Data Structures](#3-data-structures)
 4. [TaskItem](#4-taskitem)
 5. [Selector Language](#5-selector-language)
-6. [API Surface](#6-api-surface)
+6. [APIs](#6-apis)
 7. [Edge Case Resolution](#7-edge-case-resolution)
 8. [Serialization & Lossless Round-Trip](#8-serialization--lossless-round-trip)
 9. [Examples](#9-examples)
@@ -490,7 +490,7 @@ The selector language is intentionally small. CSS pseudo-selectors are not suppo
 
 
 
-## 6. API Surface
+## 6. APIs
 
 All API methods are available on `NodeHandle` — a stable reference wrapper returned by `select()`, `selectAll()`, or the root `document` object. A `NodeHandle` holds a direct memory reference to its node; it does not re-evaluate the originating selector on subsequent calls. A handle remains valid across mutations that do not affect its node, and becomes stale if the node is `remove()`d — accessing a stale handle raises a `StaleHandleError`.
 
