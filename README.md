@@ -1,21 +1,7 @@
-# Markdown Document Object Model (MDOM)
-## Technical Specification — v0.1.0
+# Markdown Document Object Model (MDOM) - v0.1.0
 
 > [!IMPORTANT]
 > Given sufficient interest, we'd target a solid v1.0 specification by March 31, 2026.
-
-## Table of Contents
-
-1. [Purpose](#1-purpose)
-2. [Core Architecture](#2-core-architecture)
-3. [Data Structures](#3-data-structures)
-4. [TaskItem](#4-taskitem)
-5. [Selector Language](#5-selector-language)
-6. [API Surface](#6-api-surface)
-7. [Edge Case Resolution](#7-edge-case-resolution)
-8. [Serialization & Lossless Round-Trip](#8-serialization--lossless-round-trip)
-9. [Examples](#9-examples)
-10. [Agent Tool Interface](#10-agent-tool-interface)
 
 ## 1. Purpose
 
@@ -39,6 +25,19 @@ How can you help?
 1. Volunteer to be part of the governing body to lead and make decisions. Reach out to "members@markdowndom.com".
 2. Provide comments by submitting issues. Please don't flood these with AI.
 3. Run experiments to work through what works and what doesn't.
+
+## Table of Contents
+
+1. [Purpose](#1-purpose)
+2. [Core Architecture](#2-core-architecture)
+3. [Data Structures](#3-data-structures)
+4. [TaskItem](#4-taskitem)
+5. [Selector Language](#5-selector-language)
+6. [API Surface](#6-api-surface)
+7. [Edge Case Resolution](#7-edge-case-resolution)
+8. [Serialization & Lossless Round-Trip](#8-serialization--lossless-round-trip)
+9. [Examples](#9-examples)
+10. [Agent Tool Interface](#10-agent-tool-interface)
 
 ### 1.1 Design Goals
 
