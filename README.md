@@ -22,7 +22,7 @@ This specification is based on providing 4 key tools: [outline](#102-markdown_ou
 
 **Getting Involved**
 How can you help?
-1. Volunteer to be part of the governing body to lead and make decisions. Reach out to members@markdowndom.com.
+1. Volunteer to be part of the governing body to lead and make decisions. Reach out to members@markdown-dom.com.
 2. Provide comments by submitting issues. Please don't flood these with AI.
 3. Run experiments to work through what works and what doesn't.
 
