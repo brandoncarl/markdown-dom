@@ -12,7 +12,7 @@ However, as document lengths increase (see Andrej Karpathy's [prescient tweet](h
 2. It can reduce accuracy by providing less relevant information
 3. Increase the possibility of errors during edits
 
-Inspired by Cloudflare's [Code Mode](https://blog.cloudflare.com/code-mode-mcp/), we propose a lightweight document object model for Markdown to:
+Inspired by Cloudflare's [Markdown Content Type](https://blog.cloudflare.com/markdown-for-agents/) and [Code Mode](https://blog.cloudflare.com/code-mode-mcp/), we propose a lightweight document object model for Markdown to:
 1. Reduce costs
 2. Increase the accuracy of locating key sections
 3. Increase speed
